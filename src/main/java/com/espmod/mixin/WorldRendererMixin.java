@@ -59,17 +59,17 @@ public class WorldRendererMixin {
 
                     if (be instanceof ChestBlockEntity chest) {
                         if (hasValuableItem(chest)) {
-                            color = new float[]{1.0f, 0.84f, 0.0f}; // Gold
+                            color = new float[]{1.0f, 0.3f, 0.0f}; // Orange
                         } else {
-                            color = new float[]{0.0f, 1.0f, 1.0f}; // Cyan
+                            color = new float[]{1.0f, 1.0f, 1.0f}; // White
                         }
                     } else if (be instanceof MobSpawnerBlockEntity) {
                         color = new float[]{1.0f, 0.0f, 0.0f}; // Red
                     } else if (be instanceof ShulkerBoxBlockEntity shulker) {
                         if (hasValuableItem(shulker)) {
-                            color = new float[]{1.0f, 0.84f, 0.0f}; // Gold
+                            color = new float[]{1.0f, 0.3f, 0.0f}; // Orange
                         } else {
-                            color = new float[]{0.6f, 0.0f, 0.8f}; // Purple
+                            color = new float[]{0.5f, 0.0f, 1.0f}; // Purple
                         }
                     }
 
@@ -85,12 +85,6 @@ public class WorldRendererMixin {
         for (int i = 0; i < inventory.size(); i++) {
             ItemStack stack = inventory.getStack(i);
             if (stack.isEmpty()) continue;
-
-            // Check by item ID - works for ALL items including enchanted ones
-            String id = net.minecraft.registry.Registries.ITEM
-                    .getId(stack.getItem()).toString();
-
-            // Diamond armor + tools
             if (stack.isOf(Items.DIAMOND_HELMET) ||
                 stack.isOf(Items.DIAMOND_CHESTPLATE) ||
                 stack.isOf(Items.DIAMOND_LEGGINGS) ||
@@ -100,12 +94,8 @@ public class WorldRendererMixin {
                 stack.isOf(Items.DIAMOND_AXE) ||
                 stack.isOf(Items.DIAMOND_SHOVEL) ||
                 stack.isOf(Items.DIAMOND_HOE) ||
-                stack.isOf(Items.DIAMOND)) {
-                return true;
-            }
-
-            // Netherite armor + tools
-            if (stack.isOf(Items.NETHERITE_HELMET) ||
+                stack.isOf(Items.DIAMOND) ||
+                stack.isOf(Items.NETHERITE_HELMET) ||
                 stack.isOf(Items.NETHERITE_CHESTPLATE) ||
                 stack.isOf(Items.NETHERITE_LEGGINGS) ||
                 stack.isOf(Items.NETHERITE_BOOTS) ||
