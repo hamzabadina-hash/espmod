@@ -25,9 +25,9 @@ public class WorldRendererMixin {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(net.minecraft.client.render.RenderTickCounter tickCounter,
+                          net.minecraft.client.render.RenderTickCounter tickCounter2,
                           boolean renderBlockOutline, Camera camera,
                           GameRenderer gameRenderer,
-                          LightmapTextureManager lightmapTextureManager,
                           Matrix4f matrix4f, Matrix4f matrix4f2,
                           CallbackInfo ci) {
 
