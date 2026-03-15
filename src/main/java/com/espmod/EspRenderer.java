@@ -1,82 +1,139 @@
 package com.espmod;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.block.entity.*;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
+import net.minecraft.world.chunk.WorldChunk;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.OptionalDouble;
+public class EspModClient implements ClientModInitializer {
 
-public class EspRenderer {
+    public static final String MOD_ID = "espmod";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static KeyBinding toggleKey;
+    public static boolean espEnabled = false;
 
-    public static void drawBox(Camera camera, BlockPos pos,
-                                float r, float g, float b) {
-        try {
+    @Override
+    public void onInitializeClient() {
+        toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.espmod.toggle",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_Z,
+                "category.espmod"
+        ));
+
+        // Use WorldRenderLastEvent - runs AFTER everything is rendered
+        // This is the correct place to draw ESP that goes through walls
+        WorldRenderEvents.LAST.register(context -> {
             MinecraftClient client = MinecraftClient.getInstance();
-            if (client.getBufferBuilders() == null) return;
 
-            VertexConsumerProvider.Immediate immediate =
-                    client.getBufferBuilders().getEntityVertexConsumers();
+            while (toggleKey.wasPressed()) {
+                espEnabled = !espEnabled;
+                if (client.player != null) {
+                    client.player.sendMessage(
+                        net.minecraft.text.Text.literal(
+                            espEnabled ? "[ESP] ON" : "[ESP] OFF"
+                        ).formatted(espEnabled ?
+                            net.minecraft.util.Formatting.GREEN :
+                            net.minecraft.util.Formatting.RED),
+                        true
+                    );
+                }
+            }
 
-            double camX = camera.getPos().x;
-            double camY = camera.getPos().y;
-            double camZ = camera.getPos().z;
+            if (!espEnabled) return;
+            if (client.player == null || client.world == null) return;
 
-            MatrixStack matrices = new MatrixStack();
-            Quaternionf rotation = camera.getRotation();
-            Quaternionf inverse = new Quaternionf(rotation).conjugate();
-            matrices.multiply(inverse);
-            matrices.translate(
-                (float)(pos.getX() - camX),
-                (float)(pos.getY() - camY),
-                (float)(pos.getZ() - camZ)
-            );
+            ClientWorld world = client.world;
+            Camera camera = context.camera();
 
-            // Disable depth test to draw through walls
+            // Disable depth test so boxes show through walls
             GL11.glDisable(GL11.GL_DEPTH_TEST);
 
-            VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
+            BlockPos playerPos = client.player.getBlockPos();
+            int renderDist = 8;
 
-            drawLine(buffer, matrices, 0,0,0, 1,0,0, r,g,b);
-            drawLine(buffer, matrices, 1,0,0, 1,1,0, r,g,b);
-            drawLine(buffer, matrices, 1,1,0, 0,1,0, r,g,b);
-            drawLine(buffer, matrices, 0,1,0, 0,0,0, r,g,b);
-            drawLine(buffer, matrices, 0,0,1, 1,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,0,1, 1,1,1, r,g,b);
-            drawLine(buffer, matrices, 1,1,1, 0,1,1, r,g,b);
-            drawLine(buffer, matrices, 0,1,1, 0,0,1, r,g,b);
-            drawLine(buffer, matrices, 0,0,0, 0,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,0,0, 1,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,1,0, 1,1,1, r,g,b);
-            drawLine(buffer, matrices, 0,1,0, 0,1,1, r,g,b);
+            for (int cx = -renderDist; cx <= renderDist; cx++) {
+                for (int cz = -renderDist; cz <= renderDist; cz++) {
+                    int chunkX = (playerPos.getX() >> 4) + cx;
+                    int chunkZ = (playerPos.getZ() >> 4) + cz;
+                    WorldChunk chunk = world.getChunk(chunkX, chunkZ);
+                    if (chunk == null) continue;
 
-            immediate.draw(RenderLayer.getLines());
+                    for (BlockEntity be : chunk.getBlockEntities().values()) {
+                        BlockPos pos = be.getPos();
+                        float[] color = null;
+
+                        if (be instanceof ChestBlockEntity chest) {
+                            if (hasValuableItem(chest)) {
+                                color = new float[]{1.0f, 0.3f, 0.0f}; // Orange
+                            } else {
+                                color = new float[]{1.0f, 1.0f, 1.0f}; // White
+                            }
+                        } else if (be instanceof MobSpawnerBlockEntity) {
+                            color = new float[]{1.0f, 0.0f, 0.0f}; // Red
+                        } else if (be instanceof ShulkerBoxBlockEntity shulker) {
+                            if (hasValuableItem(shulker)) {
+                                color = new float[]{1.0f, 0.3f, 0.0f}; // Orange
+                            } else {
+                                color = new float[]{0.5f, 0.0f, 1.0f}; // Purple
+                            }
+                        }
+
+                        if (color != null) {
+                            EspRenderer.drawBox(camera, pos, color[0], color[1], color[2]);
+                        }
+                    }
+                }
+            }
 
             // Re-enable depth test
             GL11.glEnable(GL11.GL_DEPTH_TEST);
+        });
 
-        } catch (Exception ignored) {}
+        LOGGER.info("ESP Mod loaded! Press Z to toggle.");
     }
 
-    private static void drawLine(VertexConsumer buffer, MatrixStack matrices,
-                                  float x1, float y1, float z1,
-                                  float x2, float y2, float z2,
-                                  float r, float g, float b) {
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-        float dx = x2-x1, dy = y2-y1, dz = z2-z1;
-        float len = (float)Math.sqrt(dx*dx + dy*dy + dz*dz);
-        if (len == 0) len = 1;
-        buffer.vertex(matrix, x1, y1, z1).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
-        buffer.vertex(matrix, x2, y2, z2).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
+    private boolean hasValuableItem(net.minecraft.inventory.Inventory inventory) {
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            if (stack.isEmpty()) continue;
+            if (stack.isOf(Items.DIAMOND_HELMET) ||
+                stack.isOf(Items.DIAMOND_CHESTPLATE) ||
+                stack.isOf(Items.DIAMOND_LEGGINGS) ||
+                stack.isOf(Items.DIAMOND_BOOTS) ||
+                stack.isOf(Items.DIAMOND_SWORD) ||
+                stack.isOf(Items.DIAMOND_PICKAXE) ||
+                stack.isOf(Items.DIAMOND_AXE) ||
+                stack.isOf(Items.DIAMOND_SHOVEL) ||
+                stack.isOf(Items.DIAMOND_HOE) ||
+                stack.isOf(Items.DIAMOND) ||
+                stack.isOf(Items.NETHERITE_HELMET) ||
+                stack.isOf(Items.NETHERITE_CHESTPLATE) ||
+                stack.isOf(Items.NETHERITE_LEGGINGS) ||
+                stack.isOf(Items.NETHERITE_BOOTS) ||
+                stack.isOf(Items.NETHERITE_SWORD) ||
+                stack.isOf(Items.NETHERITE_PICKAXE) ||
+                stack.isOf(Items.NETHERITE_AXE) ||
+                stack.isOf(Items.NETHERITE_SHOVEL) ||
+                stack.isOf(Items.NETHERITE_HOE) ||
+                stack.isOf(Items.NETHERITE_INGOT) ||
+                stack.isOf(Items.NETHERITE_SCRAP)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
