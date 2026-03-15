@@ -27,7 +27,9 @@ public class EspRenderer {
             matrices.push();
             matrices.translate(pos.getX() - camX, pos.getY() - camY, pos.getZ() - camZ);
 
-            VertexConsumer buffer = immediate.getBuffer(RenderLayer.LINES);
+            // Draw through walls using NO_DEPTH render layer
+            VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
+
             drawLine(buffer, matrices, 0,0,0, 1,0,0, r,g,b);
             drawLine(buffer, matrices, 1,0,0, 1,1,0, r,g,b);
             drawLine(buffer, matrices, 1,1,0, 0,1,0, r,g,b);
@@ -41,7 +43,7 @@ public class EspRenderer {
             drawLine(buffer, matrices, 1,1,0, 1,1,1, r,g,b);
             drawLine(buffer, matrices, 0,1,0, 0,1,1, r,g,b);
 
-            immediate.draw(RenderLayer.LINES);
+            immediate.draw(RenderLayer.getLines());
             matrices.pop();
         } catch (Exception ignored) {}
     }
@@ -53,7 +55,8 @@ public class EspRenderer {
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         float dx = x2-x1, dy = y2-y1, dz = z2-z1;
         float len = (float) Math.sqrt(dx*dx + dy*dy + dz*dz);
-        buffer.vertex(matrix, x1, y1, z1).color(r,g,b,1.0f).normal(dx/len, dy/len, dz/len);
-        buffer.vertex(matrix, x2, y2, z2).color(r,g,b,1.0f).normal(dx/len, dy/len, dz/len);
+        if (len == 0) len = 1;
+        buffer.vertex(matrix, x1, y1, z1).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
+        buffer.vertex(matrix, x2, y2, z2).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
     }
 }
