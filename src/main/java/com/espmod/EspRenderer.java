@@ -13,9 +13,10 @@ import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+import java.util.OptionalDouble;
+
 public class EspRenderer {
 
-    // Custom render layer that draws through walls (no depth test)
     private static final RenderLayer ESP_LAYER = RenderLayer.of(
         "esp_lines",
         VertexFormats.LINES,
@@ -25,7 +26,7 @@ public class EspRenderer {
         false,
         RenderLayer.MultiPhaseParameters.builder()
             .program(RenderPhase.LINES_PROGRAM)
-            .lineWidth(new RenderPhase.LineWidth(com.google.common.base.Optional.of(2.0f)))
+            .lineWidth(new RenderPhase.LineWidth(OptionalDouble.of(2.0)))
             .layering(RenderPhase.VIEW_OFFSET_Z_LAYERING)
             .transparency(RenderPhase.NO_TRANSPARENCY)
             .target(RenderPhase.MAIN_TARGET)
