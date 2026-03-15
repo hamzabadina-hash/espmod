@@ -6,10 +6,8 @@ import net.minecraft.block.entity.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,7 +41,6 @@ public class WorldRendererMixin {
 
         ClientWorld world = client.world;
         Camera camera = client.gameRenderer.getCamera();
-        MatrixStack matrices = new MatrixStack();
 
         BlockPos playerPos = client.player.getBlockPos();
         int renderDist = 8;
@@ -76,7 +73,7 @@ public class WorldRendererMixin {
                     }
 
                     if (color != null) {
-                        EspRenderer.drawBox(matrices, camera, pos, color[0], color[1], color[2]);
+                        EspRenderer.drawBox(camera, pos, color[0], color[1], color[2]);
                     }
                 }
             }
