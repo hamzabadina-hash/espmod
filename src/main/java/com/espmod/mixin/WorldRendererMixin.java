@@ -1,6 +1,7 @@
 package com.espmod.mixin;
 
 import com.espmod.EspModClient;
+import com.espmod.EspRenderer;
 import net.minecraft.block.entity.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
