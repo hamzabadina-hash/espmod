@@ -1,6 +1,5 @@
 package com.espmod;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
@@ -21,19 +20,15 @@ public class EspRenderer {
             VertexConsumerProvider.Immediate immediate =
                     client.getBufferBuilders().getEntityVertexConsumers();
 
-            double camX = camera.getPos().x;
-            double camY = camera.getPos().y;
-            double camZ = camera.getPos().z;
-
-            // Offset to center the box on the block
-            double x = pos.getX() - camX;
-            double y = pos.getY() - camY;
-            double z = pos.getZ() - camZ;
+            // Use exact block position relative to camera
+            float x = (float)(pos.getX() - camera.getPos().x);
+            float y = (float)(pos.getY() - camera.getPos().y);
+            float z = (float)(pos.getZ() - camera.getPos().z);
 
             MatrixStack matrices = new MatrixStack();
-
             VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
 
+            // Draw exact 1x1x1 box at block position
             drawLine(buffer, matrices, x,   y,   z,   x+1, y,   z,   r,g,b);
             drawLine(buffer, matrices, x+1, y,   z,   x+1, y+1, z,   r,g,b);
             drawLine(buffer, matrices, x+1, y+1, z,   x,   y+1, z,   r,g,b);
@@ -53,18 +48,14 @@ public class EspRenderer {
     }
 
     private static void drawLine(VertexConsumer buffer, MatrixStack matrices,
-                                  double x1, double y1, double z1,
-                                  double x2, double y2, double z2,
+                                  float x1, float y1, float z1,
+                                  float x2, float y2, float z2,
                                   float r, float g, float b) {
         Matrix4f matrix = matrices.peek().getPositionMatrix();
-        double dx = x2-x1, dy = y2-y1, dz = z2-z1;
-        double len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        float dx = x2-x1, dy = y2-y1, dz = z2-z1;
+        float len = (float)Math.sqrt(dx*dx + dy*dy + dz*dz);
         if (len == 0) len = 1;
-        buffer.vertex(matrix, (float)x1, (float)y1, (float)z1)
-              .color(r, g, b, 1.0f)
-              .normal((float)(dx/len), (float)(dy/len), (float)(dz/len));
-        buffer.vertex(matrix, (float)x2, (float)y2, (float)z2)
-              .color(r, g, b, 1.0f)
-              .normal((float)(dx/len), (float)(dy/len), (float)(dz/len));
+        buffer.vertex(matrix, x1, y1, z1).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
+        buffer.vertex(matrix, x2, y2, z2).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
     }
 }
