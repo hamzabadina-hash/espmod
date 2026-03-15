@@ -3,14 +3,37 @@ package com.espmod;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderPhase;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 public class EspRenderer {
+
+    // Custom render layer that draws through walls (no depth test)
+    private static final RenderLayer ESP_LAYER = RenderLayer.of(
+        "esp_lines",
+        VertexFormats.LINES,
+        VertexFormat.DrawMode.LINES,
+        256,
+        false,
+        false,
+        RenderLayer.MultiPhaseParameters.builder()
+            .program(RenderPhase.LINES_PROGRAM)
+            .lineWidth(new RenderPhase.LineWidth(com.google.common.base.Optional.of(2.0f)))
+            .layering(RenderPhase.VIEW_OFFSET_Z_LAYERING)
+            .transparency(RenderPhase.NO_TRANSPARENCY)
+            .target(RenderPhase.MAIN_TARGET)
+            .writeMaskState(RenderPhase.COLOR_MASK)
+            .depthTest(RenderPhase.ALWAYS_DEPTH_TEST)
+            .cull(RenderPhase.DISABLE_CULLING)
+            .build(false)
+    );
 
     public static void drawBox(Camera camera, BlockPos pos,
                                 float r, float g, float b) {
@@ -27,19 +50,17 @@ public class EspRenderer {
 
             MatrixStack matrices = new MatrixStack();
 
-            // Apply inverse camera rotation so box stays fixed in world space
             Quaternionf rotation = camera.getRotation();
             Quaternionf inverse = new Quaternionf(rotation).conjugate();
             matrices.multiply(inverse);
 
-            // Translate to block position relative to camera
             matrices.translate(
                 (float)(pos.getX() - camX),
                 (float)(pos.getY() - camY),
                 (float)(pos.getZ() - camZ)
             );
 
-            VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
+            VertexConsumer buffer = immediate.getBuffer(ESP_LAYER);
 
             drawLine(buffer, matrices, 0,0,0, 1,0,0, r,g,b);
             drawLine(buffer, matrices, 1,0,0, 1,1,0, r,g,b);
@@ -54,7 +75,7 @@ public class EspRenderer {
             drawLine(buffer, matrices, 1,1,0, 1,1,1, r,g,b);
             drawLine(buffer, matrices, 0,1,0, 0,1,1, r,g,b);
 
-            immediate.draw(RenderLayer.getLines());
+            immediate.draw(ESP_LAYER);
 
         } catch (Exception ignored) {}
     }
