@@ -8,6 +8,7 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.WorldRenderer;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.ItemStack;
@@ -24,8 +25,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class WorldRendererMixin {
 
     @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(net.minecraft.client.render.RenderTickCounter tickCounter,
-                          net.minecraft.client.render.RenderTickCounter tickCounter2,
+    private void onRender(net.minecraft.client.render.RenderTickCounter.Dynamic dynamicTickCounter,
+                          RenderTickCounter tickCounter,
                           boolean renderBlockOutline, Camera camera,
                           GameRenderer gameRenderer,
                           Matrix4f matrix4f, Matrix4f matrix4f2,
