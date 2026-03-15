@@ -8,6 +8,7 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
@@ -58,17 +59,17 @@ public class WorldRendererMixin {
 
                     if (be instanceof ChestBlockEntity chest) {
                         if (hasValuableItem(chest)) {
-                            color = new float[]{1.0f, 0.84f, 0.0f};
+                            color = new float[]{1.0f, 0.84f, 0.0f}; // Gold
                         } else {
-                            color = new float[]{0.0f, 1.0f, 1.0f};
+                            color = new float[]{0.0f, 1.0f, 1.0f}; // Cyan
                         }
                     } else if (be instanceof MobSpawnerBlockEntity) {
-                        color = new float[]{1.0f, 0.0f, 0.0f};
+                        color = new float[]{1.0f, 0.0f, 0.0f}; // Red
                     } else if (be instanceof ShulkerBoxBlockEntity shulker) {
                         if (hasValuableItem(shulker)) {
-                            color = new float[]{1.0f, 0.84f, 0.0f};
+                            color = new float[]{1.0f, 0.84f, 0.0f}; // Gold
                         } else {
-                            color = new float[]{0.6f, 0.0f, 0.8f};
+                            color = new float[]{0.6f, 0.0f, 0.8f}; // Purple
                         }
                     }
 
@@ -84,9 +85,39 @@ public class WorldRendererMixin {
         for (int i = 0; i < inventory.size(); i++) {
             ItemStack stack = inventory.getStack(i);
             if (stack.isEmpty()) continue;
+
+            // Check by item ID - works for ALL items including enchanted ones
             String id = net.minecraft.registry.Registries.ITEM
                     .getId(stack.getItem()).toString();
-            if (id.contains("diamond") || id.contains("netherite")) return true;
+
+            // Diamond armor + tools
+            if (stack.isOf(Items.DIAMOND_HELMET) ||
+                stack.isOf(Items.DIAMOND_CHESTPLATE) ||
+                stack.isOf(Items.DIAMOND_LEGGINGS) ||
+                stack.isOf(Items.DIAMOND_BOOTS) ||
+                stack.isOf(Items.DIAMOND_SWORD) ||
+                stack.isOf(Items.DIAMOND_PICKAXE) ||
+                stack.isOf(Items.DIAMOND_AXE) ||
+                stack.isOf(Items.DIAMOND_SHOVEL) ||
+                stack.isOf(Items.DIAMOND_HOE) ||
+                stack.isOf(Items.DIAMOND)) {
+                return true;
+            }
+
+            // Netherite armor + tools
+            if (stack.isOf(Items.NETHERITE_HELMET) ||
+                stack.isOf(Items.NETHERITE_CHESTPLATE) ||
+                stack.isOf(Items.NETHERITE_LEGGINGS) ||
+                stack.isOf(Items.NETHERITE_BOOTS) ||
+                stack.isOf(Items.NETHERITE_SWORD) ||
+                stack.isOf(Items.NETHERITE_PICKAXE) ||
+                stack.isOf(Items.NETHERITE_AXE) ||
+                stack.isOf(Items.NETHERITE_SHOVEL) ||
+                stack.isOf(Items.NETHERITE_HOE) ||
+                stack.isOf(Items.NETHERITE_INGOT) ||
+                stack.isOf(Items.NETHERITE_SCRAP)) {
+                return true;
+            }
         }
         return false;
     }
