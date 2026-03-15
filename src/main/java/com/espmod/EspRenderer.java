@@ -8,12 +8,12 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 
 public class EspRenderer {
 
     public static void drawBox(Camera camera, BlockPos pos,
-                                float r, float g, float b) {
+                                float r, float g, float b,
+                                Matrix4f modelViewMatrix) {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.getBufferBuilders() == null) return;
@@ -25,11 +25,9 @@ public class EspRenderer {
             double camY = camera.getPos().y;
             double camZ = camera.getPos().z;
 
-            MatrixStack matrices = new MatrixStack();
-            Quaternionf rotation = camera.getRotation();
-            Quaternionf inverse = new Quaternionf(rotation).conjugate();
-            matrices.multiply(inverse);
-            matrices.translate(
+            // Use the actual model view matrix from the render context
+            Matrix4f matrix = new Matrix4f(modelViewMatrix);
+            matrix.translate(
                 (float)(pos.getX() - camX),
                 (float)(pos.getY() - camY),
                 (float)(pos.getZ() - camZ)
@@ -37,29 +35,28 @@ public class EspRenderer {
 
             VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
 
-            drawLine(buffer, matrices, 0,0,0, 1,0,0, r,g,b);
-            drawLine(buffer, matrices, 1,0,0, 1,1,0, r,g,b);
-            drawLine(buffer, matrices, 1,1,0, 0,1,0, r,g,b);
-            drawLine(buffer, matrices, 0,1,0, 0,0,0, r,g,b);
-            drawLine(buffer, matrices, 0,0,1, 1,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,0,1, 1,1,1, r,g,b);
-            drawLine(buffer, matrices, 1,1,1, 0,1,1, r,g,b);
-            drawLine(buffer, matrices, 0,1,1, 0,0,1, r,g,b);
-            drawLine(buffer, matrices, 0,0,0, 0,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,0,0, 1,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,1,0, 1,1,1, r,g,b);
-            drawLine(buffer, matrices, 0,1,0, 0,1,1, r,g,b);
+            line(buffer, matrix, 0,0,0, 1,0,0, r,g,b);
+            line(buffer, matrix, 1,0,0, 1,1,0, r,g,b);
+            line(buffer, matrix, 1,1,0, 0,1,0, r,g,b);
+            line(buffer, matrix, 0,1,0, 0,0,0, r,g,b);
+            line(buffer, matrix, 0,0,1, 1,0,1, r,g,b);
+            line(buffer, matrix, 1,0,1, 1,1,1, r,g,b);
+            line(buffer, matrix, 1,1,1, 0,1,1, r,g,b);
+            line(buffer, matrix, 0,1,1, 0,0,1, r,g,b);
+            line(buffer, matrix, 0,0,0, 0,0,1, r,g,b);
+            line(buffer, matrix, 1,0,0, 1,0,1, r,g,b);
+            line(buffer, matrix, 1,1,0, 1,1,1, r,g,b);
+            line(buffer, matrix, 0,1,0, 0,1,1, r,g,b);
 
             immediate.draw(RenderLayer.getLines());
 
         } catch (Exception ignored) {}
     }
 
-    private static void drawLine(VertexConsumer buffer, MatrixStack matrices,
-                                  float x1, float y1, float z1,
-                                  float x2, float y2, float z2,
-                                  float r, float g, float b) {
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
+    private static void line(VertexConsumer buffer, Matrix4f matrix,
+                              float x1, float y1, float z1,
+                              float x2, float y2, float z2,
+                              float r, float g, float b) {
         float dx = x2-x1, dy = y2-y1, dz = z2-z1;
         float len = (float)Math.sqrt(dx*dx + dy*dy + dz*dz);
         if (len == 0) len = 1;
