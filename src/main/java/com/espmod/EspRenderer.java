@@ -3,13 +3,37 @@ package com.espmod;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderPhase;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 
+import java.util.OptionalDouble;
+
 public class EspRenderer {
+
+    // Render layer with depth test ALWAYS passing = xray
+    private static final RenderLayer XRAY_LAYER = RenderLayer.of(
+        "esp_xray",
+        VertexFormats.LINES,
+        VertexFormat.DrawMode.LINES,
+        1536,
+        false,
+        false,
+        RenderLayer.MultiPhaseParameters.builder()
+            .program(RenderPhase.LINES_PROGRAM)
+            .lineWidth(new RenderPhase.LineWidth(OptionalDouble.of(2.0)))
+            .layering(RenderPhase.VIEW_OFFSET_Z_LAYERING)
+            .transparency(RenderPhase.NO_TRANSPARENCY)
+            .target(RenderPhase.MAIN_TARGET)
+            .writeMaskState(RenderPhase.COLOR_MASK)
+            .depthTest(RenderPhase.ALWAYS_DEPTH_TEST)
+            .cull(RenderPhase.DISABLE_CULLING)
+            .build(false)
+    );
 
     public static void drawBox(Camera camera, BlockPos pos,
                                 float r, float g, float b,
@@ -25,7 +49,6 @@ public class EspRenderer {
             double camY = camera.getPos().y;
             double camZ = camera.getPos().z;
 
-            // Use the actual model view matrix from the render context
             Matrix4f matrix = new Matrix4f(modelViewMatrix);
             matrix.translate(
                 (float)(pos.getX() - camX),
@@ -33,7 +56,7 @@ public class EspRenderer {
                 (float)(pos.getZ() - camZ)
             );
 
-            VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
+            VertexConsumer buffer = immediate.getBuffer(XRAY_LAYER);
 
             line(buffer, matrix, 0,0,0, 1,0,0, r,g,b);
             line(buffer, matrix, 1,0,0, 1,1,0, r,g,b);
@@ -48,7 +71,7 @@ public class EspRenderer {
             line(buffer, matrix, 1,1,0, 1,1,1, r,g,b);
             line(buffer, matrix, 0,1,0, 0,1,1, r,g,b);
 
-            immediate.draw(RenderLayer.getLines());
+            immediate.draw(XRAY_LAYER);
 
         } catch (Exception ignored) {}
     }
