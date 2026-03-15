@@ -8,6 +8,7 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 
 public class EspRenderer {
 
@@ -20,27 +21,38 @@ public class EspRenderer {
             VertexConsumerProvider.Immediate immediate =
                     client.getBufferBuilders().getEntityVertexConsumers();
 
-            // Use exact block position relative to camera
-            float x = (float)(pos.getX() - camera.getPos().x);
-            float y = (float)(pos.getY() - camera.getPos().y);
-            float z = (float)(pos.getZ() - camera.getPos().z);
+            double camX = camera.getPos().x;
+            double camY = camera.getPos().y;
+            double camZ = camera.getPos().z;
 
             MatrixStack matrices = new MatrixStack();
+
+            // Apply inverse camera rotation so box stays fixed in world space
+            Quaternionf rotation = camera.getRotation();
+            Quaternionf inverse = new Quaternionf(rotation).conjugate();
+            matrices.multiply(inverse);
+
+            // Translate to block position relative to camera
+            matrices.translate(
+                (float)(pos.getX() - camX),
+                (float)(pos.getY() - camY),
+                (float)(pos.getZ() - camZ)
+            );
+
             VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
 
-            // Draw exact 1x1x1 box at block position
-            drawLine(buffer, matrices, x,   y,   z,   x+1, y,   z,   r,g,b);
-            drawLine(buffer, matrices, x+1, y,   z,   x+1, y+1, z,   r,g,b);
-            drawLine(buffer, matrices, x+1, y+1, z,   x,   y+1, z,   r,g,b);
-            drawLine(buffer, matrices, x,   y+1, z,   x,   y,   z,   r,g,b);
-            drawLine(buffer, matrices, x,   y,   z+1, x+1, y,   z+1, r,g,b);
-            drawLine(buffer, matrices, x+1, y,   z+1, x+1, y+1, z+1, r,g,b);
-            drawLine(buffer, matrices, x+1, y+1, z+1, x,   y+1, z+1, r,g,b);
-            drawLine(buffer, matrices, x,   y+1, z+1, x,   y,   z+1, r,g,b);
-            drawLine(buffer, matrices, x,   y,   z,   x,   y,   z+1, r,g,b);
-            drawLine(buffer, matrices, x+1, y,   z,   x+1, y,   z+1, r,g,b);
-            drawLine(buffer, matrices, x+1, y+1, z,   x+1, y+1, z+1, r,g,b);
-            drawLine(buffer, matrices, x,   y+1, z,   x,   y+1, z+1, r,g,b);
+            drawLine(buffer, matrices, 0,0,0, 1,0,0, r,g,b);
+            drawLine(buffer, matrices, 1,0,0, 1,1,0, r,g,b);
+            drawLine(buffer, matrices, 1,1,0, 0,1,0, r,g,b);
+            drawLine(buffer, matrices, 0,1,0, 0,0,0, r,g,b);
+            drawLine(buffer, matrices, 0,0,1, 1,0,1, r,g,b);
+            drawLine(buffer, matrices, 1,0,1, 1,1,1, r,g,b);
+            drawLine(buffer, matrices, 1,1,1, 0,1,1, r,g,b);
+            drawLine(buffer, matrices, 0,1,1, 0,0,1, r,g,b);
+            drawLine(buffer, matrices, 0,0,0, 0,0,1, r,g,b);
+            drawLine(buffer, matrices, 1,0,0, 1,0,1, r,g,b);
+            drawLine(buffer, matrices, 1,1,0, 1,1,1, r,g,b);
+            drawLine(buffer, matrices, 0,1,0, 0,1,1, r,g,b);
 
             immediate.draw(RenderLayer.getLines());
 
