@@ -8,7 +8,6 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.ItemStack;
@@ -17,6 +16,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.WorldChunk;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -24,14 +24,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(WorldRenderer.class)
 public class WorldRendererMixin {
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(net.minecraft.client.render.RenderTickCounter.Dynamic dynamicTickCounter,
-                          RenderTickCounter tickCounter,
-                          boolean renderBlockOutline, Camera camera,
-                          GameRenderer gameRenderer,
-                          Matrix4f matrix4f, Matrix4f matrix4f2,
-                          CallbackInfo ci) {
-
+    @Inject(method = "render", at = @At("TAIL"), require = 0)
+    private void onRenderTail(CallbackInfo ci) {
         MinecraftClient client = MinecraftClient.getInstance();
 
         while (EspModClient.toggleKey.wasPressed()) {
@@ -52,8 +46,8 @@ public class WorldRendererMixin {
         if (client.player == null || client.world == null) return;
 
         ClientWorld world = client.world;
+        Camera camera = client.gameRenderer.getCamera();
         MatrixStack matrices = new MatrixStack();
-        matrices.multiplyPositionMatrix(matrix4f2);
 
         BlockPos playerPos = client.player.getBlockPos();
         int renderDist = 8;
