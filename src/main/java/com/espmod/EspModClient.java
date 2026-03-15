@@ -13,6 +13,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.WorldChunk;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
@@ -56,6 +57,7 @@ public class EspModClient implements ClientModInitializer {
 
             ClientWorld world = client.world;
             Camera camera = context.camera();
+            Matrix4f modelViewMatrix = context.matrixStack().peek().getPositionMatrix();
 
             GL11.glDisable(GL11.GL_DEPTH_TEST);
 
@@ -90,7 +92,7 @@ public class EspModClient implements ClientModInitializer {
                         }
 
                         if (color != null) {
-                            EspRenderer.drawBox(camera, pos, color[0], color[1], color[2]);
+                            EspRenderer.drawBox(camera, pos, color[0], color[1], color[2], modelViewMatrix);
                         }
                     }
                 }
