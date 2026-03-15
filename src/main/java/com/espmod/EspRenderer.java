@@ -1,9 +1,10 @@
 package com.espmod;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderPhase;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.VertexFormat;
@@ -12,29 +13,11 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.lwjgl.opengl.GL11;
 
 import java.util.OptionalDouble;
 
 public class EspRenderer {
-
-    private static final RenderLayer ESP_LAYER = RenderLayer.of(
-        "esp_lines",
-        VertexFormats.LINES,
-        VertexFormat.DrawMode.LINES,
-        256,
-        false,
-        false,
-        RenderLayer.MultiPhaseParameters.builder()
-            .program(RenderPhase.LINES_PROGRAM)
-            .lineWidth(new RenderPhase.LineWidth(OptionalDouble.of(2.0)))
-            .layering(RenderPhase.VIEW_OFFSET_Z_LAYERING)
-            .transparency(RenderPhase.NO_TRANSPARENCY)
-            .target(RenderPhase.MAIN_TARGET)
-            .writeMaskState(RenderPhase.COLOR_MASK)
-            .depthTest(RenderPhase.ALWAYS_DEPTH_TEST)
-            .cull(RenderPhase.DISABLE_CULLING)
-            .build(false)
-    );
 
     public static void drawBox(Camera camera, BlockPos pos,
                                 float r, float g, float b) {
@@ -50,18 +33,19 @@ public class EspRenderer {
             double camZ = camera.getPos().z;
 
             MatrixStack matrices = new MatrixStack();
-
             Quaternionf rotation = camera.getRotation();
             Quaternionf inverse = new Quaternionf(rotation).conjugate();
             matrices.multiply(inverse);
-
             matrices.translate(
                 (float)(pos.getX() - camX),
                 (float)(pos.getY() - camY),
                 (float)(pos.getZ() - camZ)
             );
 
-            VertexConsumer buffer = immediate.getBuffer(ESP_LAYER);
+            // Disable depth test to draw through walls
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+
+            VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
 
             drawLine(buffer, matrices, 0,0,0, 1,0,0, r,g,b);
             drawLine(buffer, matrices, 1,0,0, 1,1,0, r,g,b);
@@ -76,7 +60,10 @@ public class EspRenderer {
             drawLine(buffer, matrices, 1,1,0, 1,1,1, r,g,b);
             drawLine(buffer, matrices, 0,1,0, 0,1,1, r,g,b);
 
-            immediate.draw(ESP_LAYER);
+            immediate.draw(RenderLayer.getLines());
+
+            // Re-enable depth test
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
 
         } catch (Exception ignored) {}
     }
