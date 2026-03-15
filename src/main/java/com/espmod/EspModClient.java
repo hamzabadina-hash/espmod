@@ -59,8 +59,6 @@ public class EspModClient implements ClientModInitializer {
             Camera camera = context.camera();
             Matrix4f modelViewMatrix = context.matrixStack().peek().getPositionMatrix();
 
-            GL11.glDisable(GL11.GL_DEPTH_TEST);
-
             BlockPos playerPos = client.player.getBlockPos();
             int renderDist = 8;
 
@@ -98,7 +96,6 @@ public class EspModClient implements ClientModInitializer {
                 }
             }
 
-            GL11.glEnable(GL11.GL_DEPTH_TEST);
         });
 
         LOGGER.info("ESP Mod loaded! Press Z to toggle.");
