@@ -60,7 +60,7 @@ public class EspModClient implements ClientModInitializer {
             Matrix4f modelViewMatrix = context.matrixStack().peek().getPositionMatrix();
 
             BlockPos playerPos = client.player.getBlockPos();
-            int renderDist = 32;
+            int renderDist = 128;
 
             for (int cx = -renderDist; cx <= renderDist; cx++) {
                 for (int cz = -renderDist; cz <= renderDist; cz++) {
