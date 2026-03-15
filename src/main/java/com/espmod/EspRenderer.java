@@ -1,5 +1,6 @@
 package com.espmod;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
@@ -11,7 +12,7 @@ import org.joml.Matrix4f;
 
 public class EspRenderer {
 
-    public static void drawBox(MatrixStack matrices, Camera camera, BlockPos pos,
+    public static void drawBox(Camera camera, BlockPos pos,
                                 float r, float g, float b) {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
@@ -24,39 +25,46 @@ public class EspRenderer {
             double camY = camera.getPos().y;
             double camZ = camera.getPos().z;
 
-            matrices.push();
-            matrices.translate(pos.getX() - camX, pos.getY() - camY, pos.getZ() - camZ);
+            // Offset to center the box on the block
+            double x = pos.getX() - camX;
+            double y = pos.getY() - camY;
+            double z = pos.getZ() - camZ;
 
-            // Draw through walls using NO_DEPTH render layer
+            MatrixStack matrices = new MatrixStack();
+
             VertexConsumer buffer = immediate.getBuffer(RenderLayer.getLines());
 
-            drawLine(buffer, matrices, 0,0,0, 1,0,0, r,g,b);
-            drawLine(buffer, matrices, 1,0,0, 1,1,0, r,g,b);
-            drawLine(buffer, matrices, 1,1,0, 0,1,0, r,g,b);
-            drawLine(buffer, matrices, 0,1,0, 0,0,0, r,g,b);
-            drawLine(buffer, matrices, 0,0,1, 1,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,0,1, 1,1,1, r,g,b);
-            drawLine(buffer, matrices, 1,1,1, 0,1,1, r,g,b);
-            drawLine(buffer, matrices, 0,1,1, 0,0,1, r,g,b);
-            drawLine(buffer, matrices, 0,0,0, 0,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,0,0, 1,0,1, r,g,b);
-            drawLine(buffer, matrices, 1,1,0, 1,1,1, r,g,b);
-            drawLine(buffer, matrices, 0,1,0, 0,1,1, r,g,b);
+            drawLine(buffer, matrices, x,   y,   z,   x+1, y,   z,   r,g,b);
+            drawLine(buffer, matrices, x+1, y,   z,   x+1, y+1, z,   r,g,b);
+            drawLine(buffer, matrices, x+1, y+1, z,   x,   y+1, z,   r,g,b);
+            drawLine(buffer, matrices, x,   y+1, z,   x,   y,   z,   r,g,b);
+            drawLine(buffer, matrices, x,   y,   z+1, x+1, y,   z+1, r,g,b);
+            drawLine(buffer, matrices, x+1, y,   z+1, x+1, y+1, z+1, r,g,b);
+            drawLine(buffer, matrices, x+1, y+1, z+1, x,   y+1, z+1, r,g,b);
+            drawLine(buffer, matrices, x,   y+1, z+1, x,   y,   z+1, r,g,b);
+            drawLine(buffer, matrices, x,   y,   z,   x,   y,   z+1, r,g,b);
+            drawLine(buffer, matrices, x+1, y,   z,   x+1, y,   z+1, r,g,b);
+            drawLine(buffer, matrices, x+1, y+1, z,   x+1, y+1, z+1, r,g,b);
+            drawLine(buffer, matrices, x,   y+1, z,   x,   y+1, z+1, r,g,b);
 
             immediate.draw(RenderLayer.getLines());
-            matrices.pop();
+
         } catch (Exception ignored) {}
     }
 
     private static void drawLine(VertexConsumer buffer, MatrixStack matrices,
-                                  float x1, float y1, float z1,
-                                  float x2, float y2, float z2,
+                                  double x1, double y1, double z1,
+                                  double x2, double y2, double z2,
                                   float r, float g, float b) {
         Matrix4f matrix = matrices.peek().getPositionMatrix();
-        float dx = x2-x1, dy = y2-y1, dz = z2-z1;
-        float len = (float) Math.sqrt(dx*dx + dy*dy + dz*dz);
+        double dx = x2-x1, dy = y2-y1, dz = z2-z1;
+        double len = Math.sqrt(dx*dx + dy*dy + dz*dz);
         if (len == 0) len = 1;
-        buffer.vertex(matrix, x1, y1, z1).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
-        buffer.vertex(matrix, x2, y2, z2).color(r, g, b, 1.0f).normal(dx/len, dy/len, dz/len);
+        buffer.vertex(matrix, (float)x1, (float)y1, (float)z1)
+              .color(r, g, b, 1.0f)
+              .normal((float)(dx/len), (float)(dy/len), (float)(dz/len));
+        buffer.vertex(matrix, (float)x2, (float)y2, (float)z2)
+              .color(r, g, b, 1.0f)
+              .normal((float)(dx/len), (float)(dy/len), (float)(dz/len));
     }
 }
